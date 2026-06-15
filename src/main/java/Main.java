@@ -9,7 +9,7 @@ public class Main {
         
         String s = sc.next();
         System.out.println(s + ":" + " " + "command not found");
-        sc.close();
+        
         }
     }
 }
