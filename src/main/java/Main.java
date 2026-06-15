@@ -7,12 +7,12 @@ public class Main {
         while(true){
         System.out.print("$ ");
         
-        String s = sc.next();
+        String s = sc.nextLine();
         if(s.equals("exit")){
             break;
         }
-        else if(s.equals("echo")){
-            System.out.println(s);
+        else if(s.startsWith("echo")){
+            System.out.println(s.substring(5));
         }
         else{
             System.out.println(s + ":" + " " + "command not found");
