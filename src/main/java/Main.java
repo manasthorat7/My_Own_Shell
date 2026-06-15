@@ -8,6 +8,9 @@ public class Main {
         System.out.print("$ ");
         
         String s = sc.next();
+        if(s.equals("exit")){
+            break;
+        }
         System.out.println(s + ":" + " " + "command not found");
         
         }
