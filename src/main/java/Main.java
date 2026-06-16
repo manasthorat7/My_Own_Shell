@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.Scanner;
 
 public class Main {
@@ -20,9 +21,19 @@ public class Main {
                 System.out.println(command + " is a shell builtin");
             }
             else{
-                    System.out.println(command + " is /bin/" + command);
+                    boolean found = false;
+
+                    for(String dir : System.getenv("PATH").split(File.pathSeparator)){
+                        File f = new File(dir, command);
+
+                         if(f.exists() && f.canExecute()){
+                            System.out.println(command + " is " + f.getAbsolutePath());
+                            found = true;
+                            break;
+                        }
+                   }
+               }
             }
-        }
         else{
             System.out.println(s + ":" + " " + "command not found");
         }
