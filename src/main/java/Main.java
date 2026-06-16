@@ -32,6 +32,9 @@ public class Main {
                             break;
                         }
                    }
+                    if(!found){
+                     System.out.println(command + ": not found");
+                    }
                }
             }
         else{
