@@ -31,6 +31,8 @@ public class Main {
                         File f = new File(dir, cmd);
 
                          if(f.exists() && f.canExecute()){
+                            parts[0] = f.getAbsolutePath();
+
                             ProcessBuilder pb = new ProcessBuilder(parts);
                             pb.inheritIO();
                             pb.start().waitFor();
