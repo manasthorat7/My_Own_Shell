@@ -21,19 +21,25 @@ public class Main {
                 System.out.println(command + " is a shell builtin");
             }
             else{
-                    boolean found = false;
+                    
+                String[] parts = s.split(" ");
+                String cmd = parts[0];
+
+                boolean found = false;
 
                     for(String dir : System.getenv("PATH").split(File.pathSeparator)){
-                        File f = new File(dir, command);
+                        File f = new File(dir, cmd);
 
                          if(f.exists() && f.canExecute()){
-                            System.out.println(command + " is " + f.getAbsolutePath());
+                            ProcessBuilder pb = new ProcessBuilder(parts);
+                            pb.inheritIO();
+                            pb.start().waitFor();
                             found = true;
                             break;
                         }
                    }
                     if(!found){
-                     System.out.println(command + ": not found");
+                     System.out.println(cmd + ": not found");
                     }
                }
             }
