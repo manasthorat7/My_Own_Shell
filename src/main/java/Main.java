@@ -20,7 +20,7 @@ public class Main {
                 System.out.println(command + " is a shell builtin");
             }
             else{
-                    System.out.println(command + " is /usr/bin/" + command);
+                    System.out.println(command + " is /bin/" + command);
             }
         }
         else{
