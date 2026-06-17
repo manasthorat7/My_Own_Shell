@@ -5,6 +5,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Scanner sc = new Scanner(System.in);
 
+        File currentDir = new File(System.getProperty("user.dir"));
+
         while (true) {
             System.out.print("$ ");
 
@@ -17,8 +19,23 @@ public class Main {
             else if (s.startsWith("echo ")) {
                 System.out.println(s.substring(5));
             }
-            else if (s.startsWith("pwd")){
-                System.out.println(System.getProperty("user.dir"));
+
+            else if (s.equals("pwd")) {
+                System.out.println(currentDir.getCanonicalPath());
+            }
+
+            else if (s.startsWith("cd ")) {
+                String path = s.substring(3);
+
+                File target = new File(path);
+
+                if (target.exists() && target.isDirectory()) {
+                    currentDir = target.getCanonicalFile();
+                } else {
+                    System.out.println(
+                        "cd: " + path + ": No such file or directory"
+                    );
+                }
             }
 
             else if (s.startsWith("type ")) {
@@ -27,7 +44,8 @@ public class Main {
                 if (command.equals("echo")
                         || command.equals("type")
                         || command.equals("exit")
-                        || command.equals("pwd")) {
+                        || command.equals("pwd")
+                        || command.equals("cd")) {
                     System.out.println(command + " is a shell builtin");
                 } else {
                     boolean found = false;
@@ -59,6 +77,7 @@ public class Main {
 
                     if (f.exists() && f.canExecute()) {
                         ProcessBuilder pb = new ProcessBuilder(parts);
+                        pb.directory(currentDir);
                         pb.inheritIO();
                         pb.start().waitFor();
 
