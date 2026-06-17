@@ -17,13 +17,17 @@ public class Main {
             else if (s.startsWith("echo ")) {
                 System.out.println(s.substring(5));
             }
+            else if (s.startsWith("pwd")){
+                System.out.println(System.getProperty("user.dir"));
+            }
 
             else if (s.startsWith("type ")) {
                 String command = s.substring(5);
 
                 if (command.equals("echo")
                         || command.equals("type")
-                        || command.equals("exit")) {
+                        || command.equals("exit")
+                        || command.equals("pwd")) {
                     System.out.println(command + " is a shell builtin");
                 } else {
                     boolean found = false;
