@@ -27,14 +27,21 @@ public class Main {
             else if (s.startsWith("cd ")) {
                 String path = s.substring(3);
 
-                File target = new File(path);
+                File target;
+
+                if (path.startsWith("/")) {
+                    // absolute path
+                    target = new File(path);
+                } else {
+                    // relative path
+                    target = new File(currentDir, path);
+                }
 
                 if (target.exists() && target.isDirectory()) {
                     currentDir = target.getCanonicalFile();
                 } else {
                     System.out.println(
-                        "cd: " + path + ": No such file or directory"
-                    );
+                            "cd: " + path + ": No such file or directory");
                 }
             }
 
