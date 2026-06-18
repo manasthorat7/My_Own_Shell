@@ -29,11 +29,11 @@ public class Main {
 
                 File target;
 
-                if (path.startsWith("/")) {
-                    // absolute path
+                if (path.equals("~")) {
+                    target = new File(System.getenv("HOME"));
+                } else if (path.startsWith("/")) {
                     target = new File(path);
                 } else {
-                    // relative path
                     target = new File(currentDir, path);
                 }
 
