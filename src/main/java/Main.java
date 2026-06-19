@@ -18,7 +18,14 @@ public class Main {
             }
 
             else if (s.startsWith("echo ")) {
-                System.out.println(s.substring(5));
+                String[] parts = parseCommand(s);
+
+                for (int i = 1; i < parts.length; i++) {
+                    if (i > 1)
+                        System.out.print(" ");
+                    System.out.print(parts[i]);
+                }
+                System.out.println();
             }
 
             else if (s.equals("pwd")) {
