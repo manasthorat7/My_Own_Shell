@@ -20,14 +20,19 @@ public class Main {
                 String[] parts = parseCommand(s);
 
                 String outputFile = null;
+                String errorFile = null;
                 List<String> echoParts = new ArrayList<>();
 
                 for (int i = 1; i < parts.length; i++) {
                     if (parts[i].equals(">") || parts[i].equals("1>")) {
                         outputFile = parts[i + 1];
-                        break;
+                        i++;
+                    } else if (parts[i].equals("2>")) {
+                        errorFile = parts[i + 1];
+                        i++;
+                    } else {
+                        echoParts.add(parts[i]);
                     }
-                    echoParts.add(parts[i]);
                 }
 
                 StringBuilder result = new StringBuilder();
