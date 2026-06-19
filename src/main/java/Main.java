@@ -1,3 +1,4 @@
+import java.util.*;
 import java.io.File;
 import java.util.Scanner;
 
@@ -74,7 +75,7 @@ public class Main {
             }
 
             else {
-                String[] parts = s.split(" ");
+                String[] parts = parseCommand(s);
                 String cmd = parts[0];
 
                 boolean found = false;
@@ -100,5 +101,33 @@ public class Main {
         }
 
         sc.close();
+    }
+
+    private static String[] parseCommand(String input) {
+        java.util.List<String> args = new java.util.ArrayList<>();
+
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+
+            if (c == '\'') {
+                inSingleQuote = !inSingleQuote;
+            } else if (Character.isWhitespace(c) && !inSingleQuote) {
+                if (current.length() > 0) {
+                    args.add(current.toString());
+                    current.setLength(0);
+                }
+            } else {
+                current.append(c);
+            }
+        }
+
+        if (current.length() > 0) {
+            args.add(current.toString());
+        }
+
+        return args.toArray(new String[0]);
     }
 }
