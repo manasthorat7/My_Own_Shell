@@ -69,6 +69,8 @@ public class Main {
                                 result.toString() + System.lineSeparator());
                     }
 
+                } else {
+                    System.out.println(result);
                 }
             }
 
