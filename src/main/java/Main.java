@@ -104,14 +104,19 @@ public class Main {
                 String[] parts = parseCommand(s);
 
                 String outputFile = null;
+                String errorFile = null;
                 List<String> cmdParts = new ArrayList<>();
 
                 for (int i = 0; i < parts.length; i++) {
                     if (parts[i].equals(">") || parts[i].equals("1>")) {
                         outputFile = parts[i + 1];
-                        break;
+                        i++;
+                    } else if (parts[i].equals("2>")) {
+                        errorFile = parts[i + 1];
+                        i++;
+                    } else {
+                        cmdParts.add(parts[i]);
                     }
-                    cmdParts.add(parts[i]);
                 }
 
                 parts = cmdParts.toArray(new String[0]);
@@ -127,12 +132,16 @@ public class Main {
                         ProcessBuilder pb = new ProcessBuilder(parts);
                         pb.directory(currentDir);
 
-                        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
                         if (outputFile != null) {
                             pb.redirectOutput(new File(outputFile));
                         } else {
                             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                        }
+
+                        if (errorFile != null) {
+                            pb.redirectError(new File(errorFile));
+                        } else {
+                            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
                         }
 
                         pb.start().waitFor();
