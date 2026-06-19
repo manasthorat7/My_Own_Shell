@@ -1,6 +1,5 @@
 import java.util.*;
 import java.io.File;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -20,12 +19,32 @@ public class Main {
             else if (s.startsWith("echo ")) {
                 String[] parts = parseCommand(s);
 
+                String outputFile = null;
+                List<String> echoParts = new ArrayList<>();
+
                 for (int i = 1; i < parts.length; i++) {
-                    if (i > 1)
-                        System.out.print(" ");
-                    System.out.print(parts[i]);
+                    if (parts[i].equals(">") || parts[i].equals("1>")) {
+                        outputFile = parts[i + 1];
+                        break;
+                    }
+                    echoParts.add(parts[i]);
                 }
-                System.out.println();
+
+                StringBuilder result = new StringBuilder();
+
+                for (int i = 0; i < echoParts.size(); i++) {
+                    if (i > 0)
+                        result.append(" ");
+                    result.append(echoParts.get(i));
+                }
+
+                if (outputFile != null) {
+                    java.nio.file.Files.writeString(
+                            java.nio.file.Path.of(outputFile),
+                            result.toString() + System.lineSeparator());
+                } else {
+                    System.out.println(result);
+                }
             }
 
             else if (s.equals("pwd")) {
@@ -83,6 +102,20 @@ public class Main {
 
             else {
                 String[] parts = parseCommand(s);
+
+                String outputFile = null;
+                List<String> cmdParts = new ArrayList<>();
+
+                for (int i = 0; i < parts.length; i++) {
+                    if (parts[i].equals(">") || parts[i].equals("1>")) {
+                        outputFile = parts[i + 1];
+                        break;
+                    }
+                    cmdParts.add(parts[i]);
+                }
+
+                parts = cmdParts.toArray(new String[0]);
+
                 String cmd = parts[0];
 
                 boolean found = false;
@@ -93,7 +126,15 @@ public class Main {
                     if (f.exists() && f.canExecute()) {
                         ProcessBuilder pb = new ProcessBuilder(parts);
                         pb.directory(currentDir);
-                        pb.inheritIO();
+
+                        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                        if (outputFile != null) {
+                            pb.redirectOutput(new File(outputFile));
+                        } else {
+                            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                        }
+
                         pb.start().waitFor();
 
                         found = true;
