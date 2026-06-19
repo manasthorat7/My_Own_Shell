@@ -21,11 +21,17 @@ public class Main {
 
                 String outputFile = null;
                 String errorFile = null;
+                boolean appendOutput = false;
                 List<String> echoParts = new ArrayList<>();
 
                 for (int i = 1; i < parts.length; i++) {
                     if (parts[i].equals(">") || parts[i].equals("1>")) {
                         outputFile = parts[i + 1];
+                        appendOutput = false;
+                        i++;
+                    } else if (parts[i].equals(">>") || parts[i].equals("1>>")) {
+                        outputFile = parts[i + 1];
+                        appendOutput = true;
                         i++;
                     } else if (parts[i].equals("2>")) {
                         errorFile = parts[i + 1];
@@ -50,11 +56,19 @@ public class Main {
                 }
 
                 if (outputFile != null) {
-                    java.nio.file.Files.writeString(
-                            java.nio.file.Path.of(outputFile),
-                            result.toString() + System.lineSeparator());
-                } else {
-                    System.out.println(result);
+
+                    if (appendOutput) {
+                        java.nio.file.Files.writeString(
+                                java.nio.file.Path.of(outputFile),
+                                result.toString() + System.lineSeparator(),
+                                java.nio.file.StandardOpenOption.CREATE,
+                                java.nio.file.StandardOpenOption.APPEND);
+                    } else {
+                        java.nio.file.Files.writeString(
+                                java.nio.file.Path.of(outputFile),
+                                result.toString() + System.lineSeparator());
+                    }
+
                 }
             }
 
@@ -116,11 +130,18 @@ public class Main {
 
                 String outputFile = null;
                 String errorFile = null;
+                boolean appendOutput = false;
+
                 List<String> cmdParts = new ArrayList<>();
 
                 for (int i = 0; i < parts.length; i++) {
                     if (parts[i].equals(">") || parts[i].equals("1>")) {
                         outputFile = parts[i + 1];
+                        appendOutput = false;
+                        i++;
+                    } else if (parts[i].equals(">>") || parts[i].equals("1>>")) {
+                        outputFile = parts[i + 1];
+                        appendOutput = true;
                         i++;
                     } else if (parts[i].equals("2>")) {
                         errorFile = parts[i + 1];
@@ -144,9 +165,15 @@ public class Main {
                         pb.directory(currentDir);
 
                         if (outputFile != null) {
-                            pb.redirectOutput(new File(outputFile));
-                        } else {
-                            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
+                            if (appendOutput) {
+                                pb.redirectOutput(
+                                        ProcessBuilder.Redirect.appendTo(
+                                                new File(outputFile)));
+                            } else {
+                                pb.redirectOutput(new File(outputFile));
+                            }
+
                         }
 
                         if (errorFile != null) {
