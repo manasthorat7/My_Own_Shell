@@ -165,7 +165,6 @@ public class Main {
                         pb.directory(currentDir);
 
                         if (outputFile != null) {
-
                             if (appendOutput) {
                                 pb.redirectOutput(
                                         ProcessBuilder.Redirect.appendTo(
@@ -173,7 +172,8 @@ public class Main {
                             } else {
                                 pb.redirectOutput(new File(outputFile));
                             }
-
+                        } else {
+                            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
                         }
 
                         if (errorFile != null) {
