@@ -22,6 +22,7 @@ public class Main {
                 String outputFile = null;
                 String errorFile = null;
                 boolean appendOutput = false;
+                boolean appendError = false;
                 List<String> echoParts = new ArrayList<>();
 
                 for (int i = 1; i < parts.length; i++) {
@@ -35,6 +36,11 @@ public class Main {
                         i++;
                     } else if (parts[i].equals("2>")) {
                         errorFile = parts[i + 1];
+                        appendError = false;
+                        i++;
+                    } else if (parts[i].equals("2>>")) {
+                        errorFile = parts[i + 1];
+                        appendError = true;
                         i++;
                     } else {
                         echoParts.add(parts[i]);
@@ -50,9 +56,19 @@ public class Main {
                 }
 
                 if (errorFile != null) {
-                    java.nio.file.Files.writeString(
-                            java.nio.file.Path.of(errorFile),
-                            "");
+
+                    if (appendError) {
+                        java.nio.file.Files.writeString(
+                                java.nio.file.Path.of(errorFile),
+                                "",
+                                java.nio.file.StandardOpenOption.CREATE,
+                                java.nio.file.StandardOpenOption.APPEND);
+                    } else {
+                        java.nio.file.Files.writeString(
+                                java.nio.file.Path.of(errorFile),
+                                "");
+                    }
+
                 }
 
                 if (outputFile != null) {
@@ -133,6 +149,7 @@ public class Main {
                 String outputFile = null;
                 String errorFile = null;
                 boolean appendOutput = false;
+                boolean appendError = false;
 
                 List<String> cmdParts = new ArrayList<>();
 
@@ -147,6 +164,11 @@ public class Main {
                         i++;
                     } else if (parts[i].equals("2>")) {
                         errorFile = parts[i + 1];
+                        appendError = false;
+                        i++;
+                    } else if (parts[i].equals("2>>")) {
+                        errorFile = parts[i + 1];
+                        appendError = true;
                         i++;
                     } else {
                         cmdParts.add(parts[i]);
@@ -179,7 +201,15 @@ public class Main {
                         }
 
                         if (errorFile != null) {
-                            pb.redirectError(new File(errorFile));
+
+                            if (appendError) {
+                                pb.redirectError(
+                                        ProcessBuilder.Redirect.appendTo(
+                                                new File(errorFile)));
+                            } else {
+                                pb.redirectError(new File(errorFile));
+                            }
+
                         } else {
                             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
                         }
