@@ -43,6 +43,12 @@ public class Main {
                     result.append(echoParts.get(i));
                 }
 
+                if (errorFile != null) {
+                    java.nio.file.Files.writeString(
+                            java.nio.file.Path.of(errorFile),
+                            "");
+                }
+
                 if (outputFile != null) {
                     java.nio.file.Files.writeString(
                             java.nio.file.Path.of(outputFile),
@@ -144,8 +150,7 @@ public class Main {
                         }
 
                         if (errorFile != null) {
-                            File errorOutputFile = new File(errorFile);
-                            errorOutputFile.createNewFile();
+                            pb.redirectError(new File(errorFile));
                         } else {
                             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
                         }
