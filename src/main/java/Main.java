@@ -121,17 +121,39 @@ public class Main {
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
 
-            // Backslash escaping (only outside quotes for this stage)
+            // Outside quotes: backslash escapes ANY character
             if (c == '\\' && !inSingleQuote && !inDoubleQuote) {
                 if (i + 1 < input.length()) {
                     current.append(input.charAt(i + 1));
                     i++;
                 }
-            } else if (c == '\'' && !inDoubleQuote) {
+            }
+
+            // Inside double quotes: only \" and \\ are special
+            else if (c == '\\' && inDoubleQuote) {
+                if (i + 1 < input.length()) {
+                    char next = input.charAt(i + 1);
+
+                    if (next == '"' || next == '\\') {
+                        current.append(next);
+                        i++;
+                    } else {
+                        current.append('\\');
+                    }
+                } else {
+                    current.append('\\');
+                }
+            }
+
+            else if (c == '\'' && !inDoubleQuote) {
                 inSingleQuote = !inSingleQuote;
-            } else if (c == '"' && !inSingleQuote) {
+            }
+
+            else if (c == '"' && !inSingleQuote) {
                 inDoubleQuote = !inDoubleQuote;
-            } else if (Character.isWhitespace(c)
+            }
+
+            else if (Character.isWhitespace(c)
                     && !inSingleQuote
                     && !inDoubleQuote) {
 
@@ -139,7 +161,9 @@ public class Main {
                     args.add(current.toString());
                     current.setLength(0);
                 }
-            } else {
+            }
+
+            else {
                 current.append(c);
             }
         }
