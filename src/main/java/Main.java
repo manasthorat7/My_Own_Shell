@@ -144,8 +144,8 @@ public class Main {
                         }
 
                         if (errorFile != null) {
-                            File f = new File(errorFile);
-                            f.createNewFile();
+                            File errorOutputFile = new File(errorFile);
+                            errorOutputFile.createNewFile();
                         } else {
                             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
                         }
