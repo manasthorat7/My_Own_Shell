@@ -25,6 +25,8 @@ public class Main {
         File currentDir = new File(System.getProperty("user.dir"));
 
         while (true) {
+            reapJobs(jobs);
+
             System.out.print("$ ");
 
             String s = sc.nextLine();
@@ -132,12 +134,10 @@ public class Main {
                 }
             } else if (s.equals("jobs")) {
 
-                List<Job> completedJobs = new ArrayList<>();
+                reapJobs(jobs);
 
                 for (int i = 0; i < jobs.size(); i++) {
                     Job job = jobs.get(i);
-
-                    boolean running = job.process.isAlive();
 
                     char marker = ' ';
                     if (i == jobs.size() - 1) {
@@ -146,32 +146,13 @@ public class Main {
                         marker = '-';
                     }
 
-                    if (running) {
-                        System.out.printf(
-                                "[%d]%c  %-24s%s%n",
-                                job.jobNumber,
-                                marker,
-                                "Running",
-                                job.command);
-                    } else {
-
-                        String cmd = job.command;
-                        if (cmd.endsWith(" &")) {
-                            cmd = cmd.substring(0, cmd.length() - 2);
-                        }
-
-                        System.out.printf(
-                                "[%d]%c  %-24s%s%n",
-                                job.jobNumber,
-                                marker,
-                                "Done",
-                                cmd);
-
-                        completedJobs.add(job);
-                    }
+                    System.out.printf(
+                            "[%d]%c  %-24s%s%n",
+                            job.jobNumber,
+                            marker,
+                            "Running",
+                            job.command);
                 }
-
-                jobs.removeAll(completedJobs);
             }
 
             else if (s.startsWith("type ")) {
@@ -373,5 +354,39 @@ public class Main {
         }
 
         return args.toArray(new String[0]);
+    }
+
+    private static void reapJobs(List<Job> jobs) {
+        List<Job> completedJobs = new ArrayList<>();
+
+        for (int i = 0; i < jobs.size(); i++) {
+            Job job = jobs.get(i);
+
+            if (!job.process.isAlive()) {
+
+                char marker = ' ';
+                if (i == jobs.size() - 1) {
+                    marker = '+';
+                } else if (i == jobs.size() - 2) {
+                    marker = '-';
+                }
+
+                String cmd = job.command;
+                if (cmd.endsWith(" &")) {
+                    cmd = cmd.substring(0, cmd.length() - 2);
+                }
+
+                System.out.printf(
+                        "[%d]%c  %-24s%s%n",
+                        job.jobNumber,
+                        marker,
+                        "Done",
+                        cmd);
+
+                completedJobs.add(job);
+            }
+        }
+
+        jobs.removeAll(completedJobs);
     }
 }
