@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.File;
+import java.io.OutputStream;
 
 public class Main {
 
@@ -204,26 +205,104 @@ public class Main {
 
             else {
                 if (s.contains("|")) {
+
                     String[] pipeParts = s.split("\\|", 2);
 
-                    String[] leftCmd = parseCommand(pipeParts[0].trim());
-                    String[] rightCmd = parseCommand(pipeParts[1].trim());
+                    String[] left = parseCommand(pipeParts[0].trim());
 
-                    ProcessBuilder pb1 = new ProcessBuilder(leftCmd);
-                    pb1.directory(currentDir);
-                    pb1.redirectError(ProcessBuilder.Redirect.INHERIT);
+                    String[] right = parseCommand(pipeParts[1].trim());
 
-                    ProcessBuilder pb2 = new ProcessBuilder(rightCmd);
-                    pb2.directory(currentDir);
-                    pb2.redirectError(ProcessBuilder.Redirect.INHERIT);
-                    pb2.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+                    boolean leftBuiltin = left.length > 0 &&
+                            isBuiltin(left[0]);
 
-                    List<Process> pipeline = ProcessBuilder.startPipeline(
-                            List.of(pb1, pb2));
+                    boolean rightBuiltin = right.length > 0 &&
+                            isBuiltin(right[0]);
 
-                    Process last = pipeline.get(1);
+                    // builtin | external
+                    if (leftBuiltin && !rightBuiltin) {
 
-                    last.waitFor();
+                        String output = runBuiltin(left, currentDir, jobs);
+
+                        ProcessBuilder pb = new ProcessBuilder(right);
+
+                        pb.directory(currentDir);
+
+                        pb.redirectOutput(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        pb.redirectError(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        Process p = pb.start();
+
+                        try (OutputStream os = p.getOutputStream()) {
+
+                            os.write(output.getBytes());
+                        }
+
+                        p.waitFor();
+                    }
+
+                    // external | builtin
+                    else if (!leftBuiltin && rightBuiltin) {
+
+                        ProcessBuilder pb = new ProcessBuilder(left);
+
+                        pb.directory(currentDir);
+
+                        pb.redirectError(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        Process p = pb.start();
+
+                        p.getInputStream().transferTo(
+                                OutputStream.nullOutputStream());
+
+                        p.waitFor();
+
+                        System.out.print(
+                                runBuiltin(
+                                        right,
+                                        currentDir,
+                                        jobs));
+                    }
+
+                    // builtin | builtin
+                    else if (leftBuiltin && rightBuiltin) {
+
+                        runBuiltin(left, currentDir, jobs);
+
+                        System.out.print(
+                                runBuiltin(
+                                        right,
+                                        currentDir,
+                                        jobs));
+                    }
+
+                    // external | external
+                    else {
+
+                        ProcessBuilder pb1 = new ProcessBuilder(left);
+
+                        ProcessBuilder pb2 = new ProcessBuilder(right);
+
+                        pb1.directory(currentDir);
+                        pb2.directory(currentDir);
+
+                        pb1.redirectError(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        pb2.redirectError(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        pb2.redirectOutput(
+                                ProcessBuilder.Redirect.INHERIT);
+
+                        List<Process> pipeline = ProcessBuilder.startPipeline(
+                                List.of(pb1, pb2));
+
+                        pipeline.get(1).waitFor();
+                    }
 
                     continue;
                 }
@@ -397,6 +476,81 @@ public class Main {
         }
 
         return args.toArray(new String[0]);
+    }
+
+    private static boolean isBuiltin(String cmd) {
+        return cmd.equals("echo")
+                || cmd.equals("type")
+                || cmd.equals("pwd")
+                || cmd.equals("cd")
+                || cmd.equals("jobs");
+    }
+
+    private static String runBuiltin(
+            String[] parts,
+            File currentDir,
+            List<Job> jobs) throws Exception {
+
+        StringBuilder out = new StringBuilder();
+
+        switch (parts[0]) {
+
+            case "echo":
+                for (int i = 1; i < parts.length; i++) {
+                    if (i > 1)
+                        out.append(" ");
+                    out.append(parts[i]);
+                }
+                out.append(System.lineSeparator());
+                break;
+
+            case "pwd":
+                out.append(currentDir.getCanonicalPath())
+                        .append(System.lineSeparator());
+                break;
+
+            case "type":
+
+                String target = parts[1];
+
+                if (isBuiltin(target)) {
+
+                    out.append(target)
+                            .append(" is a shell builtin")
+                            .append(System.lineSeparator());
+
+                } else {
+
+                    boolean found = false;
+
+                    for (String dir : System.getenv("PATH")
+                            .split(File.pathSeparator)) {
+
+                        File f = new File(dir, target);
+
+                        if (f.exists() && f.canExecute()) {
+
+                            out.append(target)
+                                    .append(" is ")
+                                    .append(f.getAbsolutePath())
+                                    .append(System.lineSeparator());
+
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) {
+                        out.append(target)
+                                .append(": not found")
+                                .append(System.lineSeparator());
+                    }
+                }
+
+                break;
+        }
+
+        return out.toString();
     }
 
     private static int getNextJobNumber(List<Job> jobs) {
