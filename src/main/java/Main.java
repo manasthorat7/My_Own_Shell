@@ -113,6 +113,8 @@ public class Main {
                     System.out.println(
                             "cd: " + path + ": No such file or directory");
                 }
+            } else if (s.equals("jobs")) {
+                // Empty implementation for now
             }
 
             else if (s.startsWith("type ")) {
@@ -122,7 +124,8 @@ public class Main {
                         || command.equals("type")
                         || command.equals("exit")
                         || command.equals("pwd")
-                        || command.equals("cd")) {
+                        || command.equals("cd")
+                        || command.equals("jobs")) {
                     System.out.println(command + " is a shell builtin");
                 } else {
                     boolean found = false;
