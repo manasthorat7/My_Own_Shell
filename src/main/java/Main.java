@@ -169,7 +169,6 @@ public class Main {
             if (rawParts.length == 0)
                 continue;
 
-            // Global Redirection parse!
             CommandSpec spec = parseRedirection(rawParts);
             if (spec.args.length == 0)
                 continue;
@@ -178,7 +177,7 @@ public class Main {
 
             if (isBuiltin(cmd)) {
                 if (spec.stderrFile != null) {
-                    writeToFile(spec.stderrFile, "", spec.appendStderr); // Builtins emit 0 bytes to stderr
+                    writeToFile(spec.stderrFile, "", spec.appendStderr);
                 }
 
                 if (cmd.equals("cd")) {
@@ -205,7 +204,7 @@ public class Main {
                 for (String dir : System.getenv("PATH").split(File.pathSeparator)) {
                     File f = new File(dir, cmd);
                     if (f.exists() && f.canExecute()) {
-                        ProcessBuilder pb = new ProcessBuilder(spec.args); // Passed cleaned args!
+                        ProcessBuilder pb = new ProcessBuilder(spec.args);
                         pb.directory(currentDir);
 
                         if (spec.stdinFile != null) {
@@ -380,14 +379,24 @@ public class Main {
                 out.append(currentDir.getCanonicalPath()).append(System.lineSeparator());
                 break;
 
+            // --- THE UPGRADED JOBS BUILTIN ---
             case "jobs":
+                List<Job> toRemove = new ArrayList<>();
                 for (int i = 0; i < jobs.size(); i++) {
                     Job job = jobs.get(i);
                     char marker = (i == jobs.size() - 1) ? '+' : (i == jobs.size() - 2) ? '-' : ' ';
+
                     if (job.process.isAlive()) {
                         out.append(String.format("[%d]%c  %-24s%s%n", job.jobNumber, marker, "Running", job.command));
+                    } else {
+                        String cleanCmd = job.command.endsWith(" &")
+                                ? job.command.substring(0, job.command.length() - 2)
+                                : job.command;
+                        out.append(String.format("[%d]%c  %-24s%s%n", job.jobNumber, marker, "Done", cleanCmd));
+                        toRemove.add(job);
                     }
                 }
+                jobs.removeAll(toRemove);
                 break;
 
             case "type":
