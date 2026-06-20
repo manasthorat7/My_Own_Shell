@@ -19,7 +19,6 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         List<Job> jobs = new ArrayList<>();
-        int nextJobNumber = 1;
         Scanner sc = new Scanner(System.in);
 
         File currentDir = new File(System.getProperty("user.dir"));
@@ -283,7 +282,8 @@ public class Main {
                         Process process = pb.start();
 
                         if (background) {
-                            int jobNumber = nextJobNumber++;
+
+                            int jobNumber = getNextJobNumber(jobs);
 
                             jobs.add(new Job(
                                     jobNumber,
@@ -373,6 +373,22 @@ public class Main {
         }
 
         return args.toArray(new String[0]);
+    }
+
+    private static int getNextJobNumber(List<Job> jobs) {
+        if (jobs.isEmpty()) {
+            return 1;
+        }
+
+        int highest = 0;
+
+        for (Job job : jobs) {
+            if (job.jobNumber > highest) {
+                highest = job.jobNumber;
+            }
+        }
+
+        return highest + 1;
     }
 
     private static void reapJobs(List<Job> jobs) {
