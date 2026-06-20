@@ -203,6 +203,43 @@ public class Main {
             }
 
             else {
+                if (s.contains("|")) {
+                    String[] pipeParts = s.split("\\|", 2);
+
+                    String[] leftCmd = parseCommand(pipeParts[0].trim());
+                    String[] rightCmd = parseCommand(pipeParts[1].trim());
+
+                    ProcessBuilder pb1 = new ProcessBuilder(leftCmd);
+                    pb1.directory(currentDir);
+                    pb1.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+                    ProcessBuilder pb2 = new ProcessBuilder(rightCmd);
+                    pb2.directory(currentDir);
+                    pb2.redirectError(ProcessBuilder.Redirect.INHERIT);
+                    pb2.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
+                    Process p1 = pb1.start();
+                    Process p2 = pb2.start();
+
+                    Thread pipeThread = new Thread(() -> {
+                        try (
+                                var in = p1.getInputStream();
+                                var out = p2.getOutputStream()) {
+                            in.transferTo(out);
+                        } catch (Exception ignored) {
+                        }
+                    });
+
+                    pipeThread.start();
+
+                    p1.waitFor();
+                    pipeThread.join();
+
+                    p2.getOutputStream().close();
+                    p2.waitFor();
+
+                    continue;
+                }
                 String[] parts = parseCommand(s);
                 boolean background = false;
 
