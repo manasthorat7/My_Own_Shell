@@ -131,10 +131,21 @@ public class Main {
                             "cd: " + path + ": No such file or directory");
                 }
             } else if (s.equals("jobs")) {
-                for (Job job : jobs) {
+                for (int i = 0; i < jobs.size(); i++) {
+                    Job job = jobs.get(i);
+
+                    char marker = ' ';
+
+                    if (i == jobs.size() - 1) {
+                        marker = '+';
+                    } else if (i == jobs.size() - 2) {
+                        marker = '-';
+                    }
+
                     System.out.printf(
-                            "[%d]+  %-24s%s%n",
+                            "[%d]%c  %-24s%s%n",
                             job.jobNumber,
+                            marker,
                             job.status,
                             job.command);
                 }
