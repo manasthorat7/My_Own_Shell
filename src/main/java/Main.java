@@ -2,7 +2,24 @@ import java.util.*;
 import java.io.File;
 
 public class Main {
+
+    static class Job {
+        int jobNumber;
+        long pid;
+        String command;
+        String status;
+
+        Job(int jobNumber, long pid, String command, String status) {
+            this.jobNumber = jobNumber;
+            this.pid = pid;
+            this.command = command;
+            this.status = status;
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        List<Job> jobs = new ArrayList<>();
+        int nextJobNumber = 1;
         Scanner sc = new Scanner(System.in);
 
         File currentDir = new File(System.getProperty("user.dir"));
@@ -114,7 +131,13 @@ public class Main {
                             "cd: " + path + ": No such file or directory");
                 }
             } else if (s.equals("jobs")) {
-                // Empty implementation for now
+                for (Job job : jobs) {
+                    System.out.printf(
+                            "[%d]+  %-24s%s%n",
+                            job.jobNumber,
+                            job.status,
+                            job.command);
+                }
             }
 
             else if (s.startsWith("type ")) {
@@ -226,7 +249,15 @@ public class Main {
                         Process process = pb.start();
 
                         if (background) {
-                            System.out.println("[1] " + process.pid());
+                            int jobNumber = nextJobNumber++;
+
+                            jobs.add(new Job(
+                                    jobNumber,
+                                    process.pid(),
+                                    s,
+                                    "Running"));
+
+                            System.out.println("[" + jobNumber + "] " + process.pid());
                         } else {
                             process.waitFor();
                         }
