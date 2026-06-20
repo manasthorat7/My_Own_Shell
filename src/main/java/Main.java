@@ -148,7 +148,16 @@ public class Main {
                         marker = '-';
                     }
 
-                    if (job.process.isAlive()) {
+                    boolean alive;
+
+                    try {
+                        job.process.exitValue();
+                        alive = false;
+                    } catch (IllegalThreadStateException e) {
+                        alive = true;
+                    }
+
+                    if (alive) {
                         System.out.printf(
                                 "[%d]%c  %-24s%s%n",
                                 job.jobNumber,
@@ -156,6 +165,11 @@ public class Main {
                                 "Running",
                                 job.command);
                     } else {
+
+                        if (job.doneReported) {
+                            completedJobs.add(job);
+                            continue;
+                        }
 
                         String cmd = job.command;
                         if (cmd.endsWith(" &")) {
@@ -169,9 +183,7 @@ public class Main {
                                 "Done",
                                 cmd);
 
-                        if (job.doneReported) {
-                            completedJobs.add(job);
-                        }
+                        completedJobs.add(job);
                     }
                 }
 
