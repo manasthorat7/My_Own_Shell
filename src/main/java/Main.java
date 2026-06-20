@@ -571,19 +571,24 @@ public class Main {
     }
 
     private static int getNextJobNumber(List<Job> jobs) {
-        if (jobs.isEmpty()) {
-            return 1;
-        }
+        int n = 1;
 
-        int highest = 0;
+        while (true) {
+            boolean used = false;
 
-        for (Job job : jobs) {
-            if (job.jobNumber > highest) {
-                highest = job.jobNumber;
+            for (Job job : jobs) {
+                if (job.jobNumber == n) {
+                    used = true;
+                    break;
+                }
             }
-        }
 
-        return highest + 1;
+            if (!used) {
+                return n;
+            }
+
+            n++;
+        }
     }
 
     private static void reapJobs(List<Job> jobs) {
