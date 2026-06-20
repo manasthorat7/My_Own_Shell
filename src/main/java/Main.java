@@ -218,35 +218,12 @@ public class Main {
                     pb2.redirectError(ProcessBuilder.Redirect.INHERIT);
                     pb2.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
-                    Process p1 = pb1.start();
-                    Process p2 = pb2.start();
+                    List<Process> pipeline = ProcessBuilder.startPipeline(
+                            List.of(pb1, pb2));
 
-                    Thread pipeThread = new Thread(() -> {
-                        try (
-                                var in = p1.getInputStream();
-                                var out = p2.getOutputStream()) {
-                            in.transferTo(out);
-                        } catch (Exception ignored) {
-                        }
-                    });
+                    Process last = pipeline.get(1);
 
-                    pipeThread.start();
-
-                    // Wait for the consumer (head)
-                    p2.waitFor();
-
-                    // head exited, close its stdin
-                    try {
-                        p2.getOutputStream().close();
-                    } catch (Exception ignored) {
-                    }
-
-                    // stop producer if still running
-                    if (p1.isAlive()) {
-                        p1.destroy();
-                    }
-
-                    pipeThread.join();
+                    last.waitFor();
 
                     continue;
                 }
