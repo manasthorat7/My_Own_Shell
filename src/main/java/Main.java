@@ -62,7 +62,6 @@ public class Main {
                         if (isLast) {
                             System.out.print(outStr);
                         } else {
-                            // Turn the builtin's static output into a stream for the next process
                             prevOutput = new ByteArrayInputStream(outStr.getBytes(StandardCharsets.UTF_8));
                         }
                     } else {
@@ -70,11 +69,8 @@ public class Main {
                         pb.directory(currentDir);
                         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
-                        // Stage 0 gets the console keyboard
                         if (i == 0)
                             pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
-
-                        // Final stage prints directly to console screen
                         if (isLast)
                             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
@@ -87,16 +83,21 @@ public class Main {
                             continue;
                         }
 
-                        // If there is an upstream process, spin up a live pipe thread
+                        // --- THE AGGRESSIVE FLUSH PUMP ---
                         if (i > 0 && prevOutput != null) {
-                            InputStream source = prevOutput;
-                            OutputStream target = p.getOutputStream();
+                            final InputStream source = prevOutput;
+                            final OutputStream target = p.getOutputStream();
 
                             new Thread(() -> {
+                                byte[] buf = new byte[1024];
+                                int read;
                                 try {
-                                    source.transferTo(target);
+                                    while ((read = source.read(buf)) != -1) {
+                                        target.write(buf, 0, read);
+                                        target.flush(); // <-- THE CRITICAL FIX
+                                    }
                                 } catch (IOException ignored) {
-                                    // Thrown if the right-hand process closes its stdin early (e.g. 'head')
+                                    // Broken pipe (e.g., 'head' finished and closed its stdin)
                                 } finally {
                                     try {
                                         target.close();
@@ -105,7 +106,6 @@ public class Main {
                                 }
                             }).start();
                         } else if (i > 0) {
-                            // Upstream failed; close this process's stdin so it doesn't hang
                             try {
                                 p.getOutputStream().close();
                             } catch (IOException ignored) {
@@ -119,7 +119,6 @@ public class Main {
                     }
                 }
 
-                // Only block the shell waiting for the LAST process in the chain
                 if (lastExternalProcess != null) {
                     lastExternalProcess.waitFor();
                 }
