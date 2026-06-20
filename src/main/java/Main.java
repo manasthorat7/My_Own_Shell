@@ -9,12 +9,14 @@ public class Main {
         long pid;
         String command;
         Process process;
+        boolean doneReported;
 
         Job(int jobNumber, long pid, String command, Process process) {
             this.jobNumber = jobNumber;
             this.pid = pid;
             this.command = command;
             this.process = process;
+            this.doneReported = false;
         }
     }
 
@@ -167,7 +169,9 @@ public class Main {
                                 "Done",
                                 cmd);
 
-                        completedJobs.add(job);
+                        if (job.doneReported) {
+                            completedJobs.add(job);
+                        }
                     }
                 }
 
@@ -571,12 +575,11 @@ public class Main {
     }
 
     private static void reapJobs(List<Job> jobs) {
-        List<Job> completedJobs = new ArrayList<>();
 
         for (int i = 0; i < jobs.size(); i++) {
             Job job = jobs.get(i);
 
-            if (!job.process.isAlive()) {
+            if (!job.process.isAlive() && !job.doneReported) {
 
                 char marker = ' ';
                 if (i == jobs.size() - 1) {
@@ -597,10 +600,8 @@ public class Main {
                         "Done",
                         cmd);
 
-                completedJobs.add(job);
+                job.doneReported = true;
             }
         }
-
-        jobs.removeAll(completedJobs);
     }
 }
