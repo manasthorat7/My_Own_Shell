@@ -30,7 +30,6 @@ public class Main {
             System.out.print("$ ");
 
             String s = sc.nextLine();
-            
 
             if (s.equals("exit")) {
                 break;
@@ -482,6 +481,7 @@ public class Main {
     private static boolean isBuiltin(String cmd) {
         return cmd.equals("echo")
                 || cmd.equals("type")
+                || cmd.equals("exit")
                 || cmd.equals("pwd")
                 || cmd.equals("cd")
                 || cmd.equals("jobs");
