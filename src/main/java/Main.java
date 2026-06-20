@@ -148,6 +148,12 @@ public class Main {
 
             else {
                 String[] parts = parseCommand(s);
+                boolean background = false;
+
+                if (parts.length > 0 && parts[parts.length - 1].equals("&")) {
+                    background = true;
+                    parts = java.util.Arrays.copyOf(parts, parts.length - 1);
+                }
 
                 String outputFile = null;
                 String errorFile = null;
@@ -217,7 +223,13 @@ public class Main {
                             pb.redirectError(ProcessBuilder.Redirect.INHERIT);
                         }
 
-                        pb.start().waitFor();
+                        Process process = pb.start();
+
+                        if (background) {
+                            System.out.println("[1] " + process.pid());
+                        } else {
+                            process.waitFor();
+                        }
 
                         found = true;
                         break;
