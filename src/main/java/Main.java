@@ -7,13 +7,13 @@ public class Main {
         int jobNumber;
         long pid;
         String command;
-        String status;
+        Process process;
 
-        Job(int jobNumber, long pid, String command, String status) {
+        Job(int jobNumber, long pid, String command, Process process) {
             this.jobNumber = jobNumber;
             this.pid = pid;
             this.command = command;
-            this.status = status;
+            this.process = process;
         }
     }
 
@@ -131,24 +131,47 @@ public class Main {
                             "cd: " + path + ": No such file or directory");
                 }
             } else if (s.equals("jobs")) {
+
+                List<Job> completedJobs = new ArrayList<>();
+
                 for (int i = 0; i < jobs.size(); i++) {
                     Job job = jobs.get(i);
 
-                    char marker = ' ';
+                    boolean running = job.process.isAlive();
 
+                    char marker = ' ';
                     if (i == jobs.size() - 1) {
                         marker = '+';
                     } else if (i == jobs.size() - 2) {
                         marker = '-';
                     }
 
-                    System.out.printf(
-                            "[%d]%c  %-24s%s%n",
-                            job.jobNumber,
-                            marker,
-                            job.status,
-                            job.command);
+                    if (running) {
+                        System.out.printf(
+                                "[%d]%c  %-24s%s%n",
+                                job.jobNumber,
+                                marker,
+                                "Running",
+                                job.command);
+                    } else {
+
+                        String cmd = job.command;
+                        if (cmd.endsWith(" &")) {
+                            cmd = cmd.substring(0, cmd.length() - 2);
+                        }
+
+                        System.out.printf(
+                                "[%d]%c  %-24s%s%n",
+                                job.jobNumber,
+                                marker,
+                                "Done",
+                                cmd);
+
+                        completedJobs.add(job);
+                    }
                 }
+
+                jobs.removeAll(completedJobs);
             }
 
             else if (s.startsWith("type ")) {
@@ -266,7 +289,7 @@ public class Main {
                                     jobNumber,
                                     process.pid(),
                                     s,
-                                    "Running"));
+                                    process));
 
                             System.out.println("[" + jobNumber + "] " + process.pid());
                         } else {
