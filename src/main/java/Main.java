@@ -30,16 +30,13 @@ public class Main {
             System.out.print("$ ");
 
             String s = sc.nextLine();
-            if (s.contains("|")) {
-                handlePipeline(s, currentDir, jobs);
-                continue;
-            }
+            
 
             if (s.equals("exit")) {
                 break;
             }
 
-            else if (s.startsWith("echo ")) {
+            else if (s.startsWith("echo ") && !s.contains("|")) {
                 String[] parts = parseCommand(s);
 
                 String outputFile = null;
@@ -113,7 +110,7 @@ public class Main {
                 }
             }
 
-            else if (s.equals("pwd")) {
+            else if (s.equals("pwd") && !s.contains("|")) {
                 System.out.println(currentDir.getCanonicalPath());
             }
 
@@ -136,7 +133,7 @@ public class Main {
                     System.out.println(
                             "cd: " + path + ": No such file or directory");
                 }
-            } else if (s.equals("jobs")) {
+            } else if (s.equals("jobs") && !s.contains("|")) {
 
                 List<Job> completedJobs = new ArrayList<>();
 
@@ -178,7 +175,7 @@ public class Main {
                 jobs.removeAll(completedJobs);
             }
 
-            else if (s.startsWith("type ")) {
+            else if (s.startsWith("type ") && !s.contains("|")) {
                 String command = s.substring(5);
 
                 if (command.equals("echo")
