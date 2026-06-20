@@ -37,10 +37,13 @@ public class Main {
                 break;
             }
 
-            // --- PIPELINE EXECUTION BLOCK ---
+            // ==========================================
+            // CONCURRENT PIPELINE ENGINE
+            // ==========================================
             if (s.contains("|")) {
                 List<String> stages = splitPipeline(s);
-                byte[] pipedData = null;
+                InputStream prevOutput = null;
+                Process lastExternalProcess = null;
 
                 for (int i = 0; i < stages.size(); i++) {
                     String stageStr = stages.get(i).trim();
@@ -55,62 +58,77 @@ public class Main {
                     String cmd = parts[0];
 
                     if (isBuiltin(cmd)) {
-                        // Standard shell built-ins ignore stdin, so previous pipedData is dropped.
                         String outStr = runBuiltin(parts, currentDir, jobs);
-
                         if (isLast) {
                             System.out.print(outStr);
-                            pipedData = null;
                         } else {
-                            pipedData = outStr.getBytes(StandardCharsets.UTF_8);
+                            // Turn the builtin's static output into a stream for the next process
+                            prevOutput = new ByteArrayInputStream(outStr.getBytes(StandardCharsets.UTF_8));
                         }
                     } else {
                         ProcessBuilder pb = new ProcessBuilder(parts);
                         pb.directory(currentDir);
                         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
 
-                        // First command inherits terminal keyboard if not piped
-                        if (i == 0) {
+                        // Stage 0 gets the console keyboard
+                        if (i == 0)
                             pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
-                        }
 
-                        // Last command dumps straight to terminal screen
-                        if (isLast) {
+                        // Final stage prints directly to console screen
+                        if (isLast)
                             pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-                        }
 
                         Process p;
                         try {
                             p = pb.start();
                         } catch (IOException e) {
                             System.out.println(cmd + ": command not found");
-                            pipedData = new byte[0]; // Kill downstream data flow
+                            prevOutput = new ByteArrayInputStream(new byte[0]);
                             continue;
                         }
 
-                        // Push previous stage's output into this process's stdin
-                        if (i > 0 && pipedData != null) {
-                            try (OutputStream os = p.getOutputStream()) {
-                                os.write(pipedData);
-                            } catch (IOException e) {
-                                // Ignore broken pipe if process shut its stdin early
+                        // If there is an upstream process, spin up a live pipe thread
+                        if (i > 0 && prevOutput != null) {
+                            InputStream source = prevOutput;
+                            OutputStream target = p.getOutputStream();
+
+                            new Thread(() -> {
+                                try {
+                                    source.transferTo(target);
+                                } catch (IOException ignored) {
+                                    // Thrown if the right-hand process closes its stdin early (e.g. 'head')
+                                } finally {
+                                    try {
+                                        target.close();
+                                    } catch (IOException ignored) {
+                                    }
+                                }
+                            }).start();
+                        } else if (i > 0) {
+                            // Upstream failed; close this process's stdin so it doesn't hang
+                            try {
+                                p.getOutputStream().close();
+                            } catch (IOException ignored) {
                             }
                         }
 
-                        // Capture intermediate stdout to pass to the next stage
                         if (!isLast) {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            p.getInputStream().transferTo(baos);
-                            pipedData = baos.toByteArray();
+                            prevOutput = p.getInputStream();
                         }
-
-                        p.waitFor();
+                        lastExternalProcess = p;
                     }
+                }
+
+                // Only block the shell waiting for the LAST process in the chain
+                if (lastExternalProcess != null) {
+                    lastExternalProcess.waitFor();
                 }
                 continue;
             }
 
-            // --- STANDALONE COMMANDS (Unchanged) ---
+            // ==========================================
+            // STANDALONE COMMANDS (Untouched)
+            // ==========================================
             else if (s.startsWith("echo ")) {
                 String[] parts = parseCommand(s);
                 String outputFile = null;
