@@ -232,11 +232,21 @@ public class Main {
 
                     pipeThread.start();
 
-                    p1.waitFor();
-                    pipeThread.join();
-
-                    p2.getOutputStream().close();
+                    // Wait for the consumer (head)
                     p2.waitFor();
+
+                    // head exited, close its stdin
+                    try {
+                        p2.getOutputStream().close();
+                    } catch (Exception ignored) {
+                    }
+
+                    // stop producer if still running
+                    if (p1.isAlive()) {
+                        p1.destroy();
+                    }
+
+                    pipeThread.join();
 
                     continue;
                 }
