@@ -30,6 +30,10 @@ public class Main {
             System.out.print("$ ");
 
             String s = sc.nextLine();
+            if (s.contains("|")) {
+                handlePipeline(s, currentDir, jobs);
+                continue;
+            }
 
             if (s.equals("exit")) {
                 break;
