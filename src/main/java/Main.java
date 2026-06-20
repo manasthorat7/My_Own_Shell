@@ -12,14 +12,13 @@ public class Main {
         long pid;
         String command;
         Process process;
-        boolean doneReported;
+        // Removed 'doneReported' entirely!
 
         Job(int jobNumber, long pid, String command, Process process) {
             this.jobNumber = jobNumber;
             this.pid = pid;
             this.command = command;
             this.process = process;
-            this.doneReported = false;
         }
     }
 
@@ -29,7 +28,7 @@ public class Main {
         File currentDir = new File(System.getProperty("user.dir"));
 
         while (true) {
-            reapJobs(jobs);
+            reapJobs(jobs); // Wipes dead jobs from the list instantly
             System.out.print("$ ");
             String s = sc.nextLine();
 
@@ -83,7 +82,6 @@ public class Main {
                             continue;
                         }
 
-                        // --- THE AGGRESSIVE FLUSH PUMP ---
                         if (i > 0 && prevOutput != null) {
                             final InputStream source = prevOutput;
                             final OutputStream target = p.getOutputStream();
@@ -94,10 +92,9 @@ public class Main {
                                 try {
                                     while ((read = source.read(buf)) != -1) {
                                         target.write(buf, 0, read);
-                                        target.flush(); // <-- THE CRITICAL FIX
+                                        target.flush();
                                     }
                                 } catch (IOException ignored) {
-                                    // Broken pipe (e.g., 'head' finished and closed its stdin)
                                 } finally {
                                     try {
                                         target.close();
@@ -126,7 +123,7 @@ public class Main {
             }
 
             // ==========================================
-            // STANDALONE COMMANDS (Untouched)
+            // STANDALONE COMMANDS
             // ==========================================
             else if (s.startsWith("echo ")) {
                 String[] parts = parseCommand(s);
@@ -206,28 +203,16 @@ public class Main {
                     Job job = jobs.get(i);
                     char marker = (i == jobs.size() - 1) ? '+' : (i == jobs.size() - 2) ? '-' : ' ';
 
-                    boolean alive;
-                    try {
-                        job.process.exitValue();
-                        alive = false;
-                    } catch (IllegalThreadStateException e) {
-                        alive = true;
-                    }
-
-                    if (alive) {
+                    if (job.process.isAlive()) {
                         System.out.printf("[%d]%c  %-24s%s%n", job.jobNumber, marker, "Running", job.command);
                     } else {
-                        if (job.doneReported) {
-                            completedJobs.add(job);
-                            continue;
-                        }
                         String cmd = job.command.endsWith(" &") ? job.command.substring(0, job.command.length() - 2)
                                 : job.command;
                         System.out.printf("[%d]%c  %-24s%s%n", job.jobNumber, marker, "Done", cmd);
                         completedJobs.add(job);
                     }
                 }
-                jobs.removeAll(completedJobs);
+                jobs.removeAll(completedJobs); // Evict announced jobs
             }
 
             else if (s.startsWith("type ")) {
@@ -419,15 +404,17 @@ public class Main {
     }
 
     private static void reapJobs(List<Job> jobs) {
+        List<Job> deadJobs = new ArrayList<>();
         for (int i = 0; i < jobs.size(); i++) {
             Job job = jobs.get(i);
-            if (!job.process.isAlive() && !job.doneReported) {
+            if (!job.process.isAlive()) {
                 char marker = (i == jobs.size() - 1) ? '+' : (i == jobs.size() - 2) ? '-' : ' ';
                 String cmd = job.command.endsWith(" &") ? job.command.substring(0, job.command.length() - 2)
                         : job.command;
                 System.out.printf("[%d]%c  %-24s%s%n", job.jobNumber, marker, "Done", cmd);
-                job.doneReported = true;
+                deadJobs.add(job);
             }
         }
+        jobs.removeAll(deadJobs); // Instant total eviction
     }
 }
